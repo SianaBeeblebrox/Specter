@@ -1,0 +1,27 @@
+package io.github.sianabeeblebrox.specter.annotations;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+/**
+ * Share a variable between multiple methods injecting into the same target method.
+ *
+ * @see <a href="https://github.com/Lenni0451/ClassTransform/wiki/CShared">GitHub Wiki</a>
+ */
+@Retention(RetentionPolicy.CLASS)
+@Target(ElementType.PARAMETER)
+public @interface Shared {
+
+    /**
+     * @return The name of the shared variable
+     */
+    String value();
+
+    /**
+     * @return If the shared variable should be globally accessible
+     */
+    boolean global() default false;
+
+}

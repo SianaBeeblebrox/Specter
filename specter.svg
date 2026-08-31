@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="512"
+   height="512"
+   viewBox="0 0 512 512"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="specter.svg"
+   inkscape:version="1.4.4 (dcaf3e7, 2026-05-05)"
+   inkscape:export-filename="..\..\IntelliJ\Specter\specter.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="0.45254834"
+     inkscape:cx="-574.52426"
+     inkscape:cy="343.6097"
+     inkscape:window-width="1920"
+     inkscape:window-height="991"
+     inkscape:window-x="-9"
+     inkscape:window-y="-9"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1">
+    <inkscape:path-effect
+       effect="powermask"
+       id="path-effect2"
+       is_visible="true"
+       lpeversion="1"
+       uri="#mask-powermask-path-effect2"
+       invert="false"
+       hide_mask="false"
+       background="true"
+       background_color="#ffffffff" />
+    <inkscape:path-effect
+       effect="powermask"
+       id="path-effect64"
+       is_visible="true"
+       lpeversion="1"
+       uri="#mask-powermask-path-effect64"
+       invert="false"
+       hide_mask="false"
+       background="true"
+       background_color="#ffffffff" />
+    <inkscape:path-effect
+       effect="clone_original"
+       linkeditem=""
+       id="path-effect57"
+       is_visible="true"
+       lpeversion="1"
+       method="none"
+       attributes=""
+       css_properties=""
+       allow_transforms="true" />
+    <inkscape:path-effect
+       effect="powermask"
+       id="path-effect56"
+       is_visible="true"
+       lpeversion="1"
+       uri="#mask-powermask-path-effect56"
+       invert="false"
+       hide_mask="false"
+       background="true"
+       background_color="#ffffffff" />
+    <inkscape:path-effect
+       effect="powermask"
+       id="path-effect43"
+       is_visible="true"
+       lpeversion="1"
+       uri="#mask-powermask-path-effect43"
+       invert="false"
+       hide_mask="false"
+       background="true"
+       background_color="#ffffffff" />
+    <inkscape:path-effect
+       effect="powerclip"
+       message=""
+       id="path-effect36"
+       is_visible="true"
+       lpeversion="1"
+       inverse="true"
+       flatten="false"
+       hide_clip="false" />
+    <mask
+       maskUnits="userSpaceOnUse"
+       id="mask-powermask-path-effect2">
+      <path
+         id="mask-powermask-path-effect2_box"
+         style="fill:#ffffff;fill-opacity:1"
+         d="M 0.1338501,0.1338501 H 514.13385 V 514.13385 H 0.1338501 Z" />
+      <use
+         x="0"
+         y="0"
+         xlink:href="#g56"
+         id="use2"
+         inkscape:label="Use Mask"
+         style="" />
+    </mask>
+    <filter
+       id="mask-powermask-path-effect2_inverse"
+       inkscape:label="filtermask-powermask-path-effect2"
+       style="color-interpolation-filters:sRGB"
+       height="100"
+       width="100"
+       x="-50"
+       y="-50">
+      <feColorMatrix
+         id="mask-powermask-path-effect2_primitive1"
+         values="1"
+         type="saturate"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="mask-powermask-path-effect2_primitive2"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 "
+         in="fbSourceGraphic" />
+    </filter>
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       style="display:inline;fill:#db50c8;fill-opacity:1;stroke:none;stroke-width:2.26772;stroke-linecap:square;stroke-linejoin:bevel;paint-order:stroke fill markers"
+       id="path1"
+       inkscape:label="Base"
+       clip-path="none"
+       mask="url(#mask-powermask-path-effect2)"
+       inkscape:path-effect="#path-effect2"
+       sodipodi:type="arc"
+       sodipodi:cx="257.13385"
+       sodipodi:cy="257.13385"
+       sodipodi:rx="256"
+       sodipodi:ry="256"
+       d="m 513.13385,257.13385 a 256,256 0 0 1 -256,256 256,256 0 0 1 -255.9999999,-256 A 256,256 0 0 1 257.13385,1.1338501 a 256,256 0 0 1 256,255.9999999 z" />
+    <g
+       id="g56"
+       inkscape:label="Mask"
+       display="inline">
+      <circle
+         style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:4.02046;stroke-linecap:square;stroke-linejoin:bevel;paint-order:stroke fill markers"
+         id="circle50"
+         cx="477.95966"
+         cy="51.293011"
+         r="142.88747"
+         inkscape:label="Head" />
+      <circle
+         style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.90913;stroke-linecap:square;stroke-linejoin:bevel;paint-order:stroke fill markers"
+         id="circle51"
+         cx="38.084499"
+         cy="161.86992"
+         r="32.310558"
+         inkscape:label="Left Eye" />
+      <circle
+         style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.90913;stroke-linecap:square;stroke-linejoin:bevel;paint-order:stroke fill markers"
+         id="circle52"
+         cx="159.05775"
+         cy="200.73746"
+         r="32.310558"
+         inkscape:label="Right Eye" />
+      <circle
+         style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.454565;stroke-linecap:square;stroke-linejoin:bevel;paint-order:stroke fill markers"
+         id="circle52-8"
+         cx="70.395058"
+         cy="302.16757"
+         r="16.155279"
+         inkscape:label="Mouth" />
+      <circle
+         style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:2.41203;stroke-linecap:square;stroke-linejoin:bevel;paint-order:stroke fill markers"
+         id="circle54"
+         cx="73.334091"
+         cy="453.6506"
+         r="85.723671"
+         inkscape:label="Tentacles" />
+      <circle
+         style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:3.32351;stroke-linecap:square;stroke-linejoin:bevel;paint-order:stroke fill markers"
+         id="circle55"
+         cx="257.13385"
+         cy="512"
+         r="118.11781"
+         inkscape:label="Tentacles" />
+      <circle
+         style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:2.5611;stroke-linecap:square;stroke-linejoin:bevel;paint-order:stroke fill markers"
+         id="circle56"
+         cx="436.87466"
+         cy="420.97815"
+         r="91.021835"
+         inkscape:label="Tentacles" />
+    </g>
+    <use
+       x="0"
+       y="0"
+       xlink:href="#path1"
+       id="use3"
+       transform="translate(-680.90039,-1.13385)"
+       style="display:inline"
+       inkscape:label="Preview" />
+  </g>
+</svg>
