@@ -107,6 +107,16 @@ public class Resources {
     }
 
     /**
+     * Reads the given resource as a string
+     * @param origin any class within the target JAR
+     * @param path absolute path to resource within JAR
+     * @return the string text of resource
+     */
+    public static String readString(final Class<?> origin, final String path) {
+        return unchecked(() -> Files.readString(getPath(origin, path)));
+    }
+
+    /**
      * Deletes the given resource
      * @param origin any class within the target JAR
      * @param path absolute path to resource within JAR
@@ -157,10 +167,50 @@ public class Resources {
         /**
          * Creates a {@link ResourceTransformer} that applies regex substitution to all matches in a textual resource
          * @param pattern the regex pattern
+         * @param replacement the replacement value
+         * @return the {@link ResourceTransformer}
+         */
+        static ResourceTransformer replaceAll(final String pattern, final String replacement) {
+            return replaceAll(Pattern.compile(pattern), r -> replacement);
+        }
+
+        /**
+         * Creates a {@link ResourceTransformer} that applies regex substitution to only the first match in a textual resource
+         * @param pattern the regex pattern
+         * @param replacement the replacement value
+         * @return the {@link ResourceTransformer}
+         */
+        static ResourceTransformer replaceFirst(final String pattern, final String replacement) {
+            return replaceFirst(Pattern.compile(pattern), r -> replacement);
+        }
+
+        /**
+         * Creates a {@link ResourceTransformer} that applies regex substitution to all matches in a textual resource
+         * @param pattern the regex pattern
          * @param callback A function to map matches to replacement values
          * @return the {@link ResourceTransformer}
          */
-        static ResourceTransformer replaceAll(final Pattern pattern, Function<MatchResult, String> callback) {
+        static ResourceTransformer replaceAll(final String pattern, final Function<MatchResult, String> callback) {
+            return replaceAll(Pattern.compile(pattern), callback);
+        }
+
+        /**
+         * Creates a {@link ResourceTransformer} that applies regex substitution to only the first match in a textual resource
+         * @param pattern the regex pattern
+         * @param callback A function to map the match to a replacement value
+         * @return the {@link ResourceTransformer}
+         */
+        static ResourceTransformer replaceFirst(final String pattern, final Function<MatchResult, String> callback) {
+            return replaceFirst(Pattern.compile(pattern), callback);
+        }
+
+        /**
+         * Creates a {@link ResourceTransformer} that applies regex substitution to all matches in a textual resource
+         * @param pattern the regex pattern
+         * @param callback A function to map matches to replacement values
+         * @return the {@link ResourceTransformer}
+         */
+        static ResourceTransformer replaceAll(final Pattern pattern, final Function<MatchResult, String> callback) {
             return bytes -> pattern.matcher(new String(bytes, StandardCharsets.UTF_8)).replaceAll(callback).getBytes(StandardCharsets.UTF_8);
         }
 
@@ -170,7 +220,7 @@ public class Resources {
          * @param callback A function to map the match to a replacement value
          * @return the {@link ResourceTransformer}
          */
-        static ResourceTransformer replaceFirst(final Pattern pattern, Function<MatchResult, String> callback) {
+        static ResourceTransformer replaceFirst(final Pattern pattern, final Function<MatchResult, String> callback) {
             return bytes -> pattern.matcher(new String(bytes, StandardCharsets.UTF_8)).replaceFirst(callback).getBytes(StandardCharsets.UTF_8);
         }
 
