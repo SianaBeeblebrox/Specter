@@ -98,7 +98,6 @@ public final class AccessTweaker extends AbstractClassVisitorTransform {
 
             if(Dynamics.invoke(ClassLoader.getSystemClassLoader(), "findLoadedClass", String.class, matcher.group("class").replace('/', '.')) instanceof Class<?> clazz) {
                 unchecked(() -> Specter.getInstrumentation().retransformClasses(clazz));
-                Specter.LOGGER.log("info", "retransforming ", clazz);
             }
         } else {
             throw new AccessTweakerFormatException(String.format("Bad access tweaker format '%s'", arg));
