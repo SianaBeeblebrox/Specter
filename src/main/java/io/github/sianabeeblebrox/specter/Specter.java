@@ -3,10 +3,12 @@ package io.github.sianabeeblebrox.specter;
 import groovy.lang.*;
 import io.github.sianabeeblebrox.specter.annotations.Transformer;
 import io.github.sianabeeblebrox.specter.annotations.impl.AnnotationPreprocessor;
+import io.github.sianabeeblebrox.specter.annotations.impl.StaticTransformation;
 import io.github.sianabeeblebrox.specter.impl.AbstractClassNodeTransform;
 import io.github.sianabeeblebrox.specter.impl.GroovyByteClassLoader;
 import io.github.sianabeeblebrox.specter.logger.Logger;
 import net.lenni0451.classtransform.TransformerManager;
+import net.lenni0451.classtransform.transformer.HandlerPosition;
 import net.lenni0451.classtransform.utils.tree.BasicClassProvider;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.objectweb.asm.Opcodes;
@@ -86,6 +88,7 @@ public final class Specter {
         }, true);
 
         TRANSFORMER_MANAGER.addTransformerPreprocessor(new AnnotationPreprocessor());
+        TRANSFORMER_MANAGER.addCustomAnnotationHandler(new StaticTransformation(), HandlerPosition.PRE);
 
         if(args != null && !args.isBlank()) {
             List<Path> paths = new ArrayList<>();
