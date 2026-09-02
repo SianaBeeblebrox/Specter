@@ -64,10 +64,10 @@ public final class AccessTweaker extends AbstractClassVisitorTransform {
      *         {@code /} for packages and {@code $} for inner classes)
      *     </li>
      *     <li>
-     *         If present, {@code <member>} the name of the member within the class to target
+     *         If present, {@code [member]} the name of the member within the class to target
      *     </li>
      *     <li>
-     *         If present, {@code <descriptor>} further limits which member (among fields, methods, and overloads of the
+     *         If present, {@code [descriptor]} further limits which member (among fields, methods, and overloads of the
      *         same name) of the class to target (May contain whitespace, if a descriptor is given, a member name must
      *         also be given)
      *     </li>

@@ -11,8 +11,9 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.function.Function;
 
 /**
- * A thread-safe event bus system, higher priority listeners (smaller integer value) are run first (if an event listener
- * returns a non-null value, that value is returned to the event dispatcher and stops further execution of listeners)
+ * A thread-safe event bus system, higher priority listeners (smaller integer value) are run first (listeners of the
+ * same priority are run in the order they were added); if an event listener returns a non-null value, that value is
+ * returned to the event dispatcher and stops further execution of listeners
  */
 public final class EventBus {
     public static final int HIGH_PRIORITY = -1, DEFAULT_PRIORITY = 0, LOW_PRIORITY = 1;
