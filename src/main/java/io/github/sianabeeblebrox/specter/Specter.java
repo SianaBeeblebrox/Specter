@@ -10,6 +10,7 @@ import io.github.sianabeeblebrox.specter.logger.Logger;
 import net.lenni0451.classtransform.TransformerManager;
 import net.lenni0451.classtransform.transformer.HandlerPosition;
 import net.lenni0451.classtransform.utils.tree.BasicClassProvider;
+import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -18,17 +19,16 @@ import org.objectweb.asm.tree.*;
 import javax.annotation.Nullable;
 import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Method;
+import java.net.URI;
 import java.net.URL;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.file.*;
 import java.security.ProtectionDomain;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.github.sianabeeblebrox.specter.ExceptionUtil.*;
 import static io.github.sianabeeblebrox.specter.Dynamics.get;
@@ -36,32 +36,52 @@ import static io.github.sianabeeblebrox.specter.Dynamics.invoke;
 
 public final class Specter {
     public static final String VERSION = Specter.class.getPackage().getImplementationVersion();
-    private static final ConcurrentHashMap<Class<?>, String[]> ARGS = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, String[]> ARGS = Collections.synchronizedMap(new LinkedHashMap<>());
     private static final GroovyClassLoader CLASS_LOADER = new GroovyByteClassLoader(Specter.class.getClassLoader()) {
         @Override
-        public Class<?> onClassDefined(final Class<?> clazz) {
+        public Class<?> onClassDefined(final Class<?> clazz, final @Nullable SourceUnit source) {
             addTransformers(clazz);
-            return super.onClassDefined(clazz);
-        }
+            if(source != null) {
+                final Path cache = getCacheLocation(source.getSource().getURI());
+                try {
+                    Files.createDirectories(cache);
 
-        private void addTransformers(final Class<?> clazz) {
-            if(clazz.isAnnotationPresent(Transformer.class)) {
-                LOGGER.log("info", "Adding transformer ", clazz.getName());
-                TRANSFORMER_MANAGER.addTransformer(clazz.getName());
+                    Path index;
+                    for(int[] i = {0}; (index = ignored(() -> Files.createDirectory(cache.resolve(String.format("%d", i[0]))))) == null; i[0]++);
+
+                    Files.copy(this.getResourceAsStream(clazz.getName().replace('.', '/') + ".class"), index.resolve(clazz.getName() + ".class"));
+                } catch (final Throwable e) {
+                    deleteIfExists(cache);
+                    LOGGER.log("error", "Unable to cache class '", clazz.getName(), "': ", e);
+                }
             }
-            for(final Class<?> child : clazz.getDeclaredClasses()) {
-                addTransformers(child);
-            }
+            return super.onClassDefined(clazz, source);
         }
     };
+
+    private static void addTransformers(final Class<?> clazz) {
+        if(clazz.isAnnotationPresent(Transformer.class)) {
+            LOGGER.log("info", "Adding transformer ", clazz.getName());
+            TRANSFORMER_MANAGER.addTransformer(clazz.getName());
+        }
+        for(final Class<?> child : clazz.getDeclaredClasses()) {
+            addTransformers(child);
+        }
+    }
+
+    public static Path getCacheLocation(final URI uri) {
+        return CACHE.resolve(ROOT.relativize(Path.of(URI.create(uri.toString().replaceAll("^(?:jar:)+|!", "")))));
+    }
+
     private static final TransformerManager TRANSFORMER_MANAGER = new TransformerManager(new BasicClassProvider(CLASS_LOADER));
     private static Instrumentation INSTRUMENTATION;
+    public static final EventBus EVENT_BUS = new EventBus();
     static Logger LOGGER = ncls(
             Logger.getExternalLogger("org.apache.logging.log4j.LogManager"),
             () -> Logger.getExternalLogger("org.slf4j.LoggerFactory"),
             Logger::getLogger
     );
-    public static final EventBus EVENT_BUS = new EventBus();
+    private static Path ROOT, CACHE;
 
     public static void premain(final String args, final Instrumentation instrumentation) {
         Specter.INSTRUMENTATION = instrumentation;
@@ -90,18 +110,25 @@ public final class Specter {
         TRANSFORMER_MANAGER.addTransformerPreprocessor(new AnnotationPreprocessor());
         TRANSFORMER_MANAGER.addCustomAnnotationHandler(new StaticTransformation(), HandlerPosition.PRE);
 
-        if(args != null && !args.isBlank()) {
+        if(args != null && !args.isBlank()) unchecked(() -> {
+            final Path path = ROOT = Paths.get(args.strip()).toAbsolutePath().normalize();
+            Files.createDirectories(CACHE = path.resolve(".cache"));
+        });
+
+        if(ROOT != null) {
+            LOGGER.log("info", "Loading mods from '", ROOT, "'");
+            var start = System.nanoTime();
+
             List<Path> paths = new ArrayList<>();
 
-            ls(Path.of(args), path -> {
-//            println(path);
+            ls(ROOT, path -> {
                 if(Files.isRegularFile(path)) {
                     switch(getExtension(path)) {
                         case "jar" -> {
                             LOGGER.log("info", "Found jar ", path);
                             addURL(unchecked(() -> path.toUri().toURL()));
                         }
-                        case "groovy" -> unchecked(() -> {
+                        case "groovy", "gvy", "gy", "gsh" -> unchecked(() -> {
 //                        final Class<?> clazz = CLASS_LOADER.parseClass(new GroovyCodeSource(path.toUri()));
 //                        if(Script.class.isAssignableFrom(clazz)) {
 //                            InvokerHelper.newScript((Class<? extends Script>) clazz, new Binding()).run();
@@ -113,19 +140,16 @@ public final class Specter {
             }, true);
 
             for(final Path path : paths) {
-                unchecked(() -> {
-                    final Class<?> clazz = CLASS_LOADER.parseClass(new GroovyCodeSource(path.toUri()));
-                    if(Script.class.isAssignableFrom(clazz)) {
-                        InvokerHelper.newScript((Class<? extends Script>) clazz, new Binding()).run();
-                    }
-                });
+                run(load(path, true), new Binding());
             }
+
+            var end = System.nanoTime();
+            Specter.LOGGER.log("info", "Loaded in ", (end - start)/1e6d, "ms");
         }
 
         TRANSFORMER_MANAGER.hookInstrumentation(instrumentation);
         Specter.EVENT_BUS.dispatch("premain", instrumentation);
     }
-
     private static void ls(final Path root, final Consumer<Path> callback, final boolean unzip) {
         try(final var stream = Files.list(root)) {
             stream.forEach(path -> {
@@ -154,6 +178,19 @@ public final class Specter {
     // TODO download zip
     private static Path download(final URL url) {
         return null;
+    }
+
+    private static void deleteIfExists(final Path path) {
+        unchecked(() -> {
+            if(Files.isDirectory(path)) {
+                with(
+                        () -> Files.walk(path),
+                        (Stream<Path> stream) -> stream.sorted(Comparator.reverseOrder()).forEach(p -> unchecked(() -> Files.delete(p)))
+                );
+            } else {
+                Files.deleteIfExists(path);
+            }
+        });
     }
 
     private static void openModules(final Instrumentation instrumentation) {
@@ -234,5 +271,39 @@ public final class Specter {
     }
     public static void setLogger(final Logger logger) {
         Specter.LOGGER = logger;
+    }
+
+    private static void run(@Nullable final Class<?> clazz, final Binding binding) {
+        unchecked(() -> {
+            if(Script.class.isAssignableFrom(clazz)) {
+                InvokerHelper.newScript((Class<? extends Script>) clazz, binding).run();
+            }
+        });
+    }
+
+    private static @Nullable Class<?> load(final Path path, final boolean cachable) {
+        return unchecked(() -> {
+            final Path cache = getCacheLocation(path.toUri());
+            if(cachable && Files.isDirectory(cache) && Files.getLastModifiedTime(path).compareTo(Files.getLastModifiedTime(cache)) < 0) {
+                Reference<Class<?>> script = new Reference<>();
+                with(() -> Files.list(cache), (Stream<Path> indexes) -> indexes.forEach(index -> unchecked(() -> {
+                    with(() -> Files.list(index), (Stream<Path> stream) -> stream.forEach(cached -> unchecked(() -> {
+                        final Class<?> clazz = CLASS_LOADER.defineClass(null, Files.readAllBytes(cached));
+
+                        if(clazz.getEnclosingClass() == null) {
+                           script.set(clazz);
+                        }
+                    })));
+                })));
+                return script.get();
+            } else {
+                deleteIfExists(cache);
+                return CLASS_LOADER.parseClass(new GroovyCodeSource(path.toUri()), cachable);
+            }
+        });
+    }
+
+    public static Path getRootModPath() {
+        return ROOT;
     }
 }
