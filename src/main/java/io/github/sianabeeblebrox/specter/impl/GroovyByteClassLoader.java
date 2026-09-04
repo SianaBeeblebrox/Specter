@@ -10,8 +10,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static net.lenni0451.classtransform.utils.ASMUtils.slash;
 
@@ -21,7 +20,7 @@ import static net.lenni0451.classtransform.utils.ASMUtils.slash;
  * Also provides a hook for whenever a new class is defined.
  */
 public class GroovyByteClassLoader extends GroovyClassLoader {
-    private final Map<String, byte[]> BYTES = new HashMap<>();
+    private final ConcurrentHashMap<String, byte[]> BYTES = new ConcurrentHashMap<>();
 
     public GroovyByteClassLoader() {
         super();
@@ -44,7 +43,7 @@ public class GroovyByteClassLoader extends GroovyClassLoader {
     }
 
     @Override
-    public Class defineClass(String name, byte[] bytes) throws ClassFormatError {
+    public Class<?> defineClass(String name, byte[] bytes) throws ClassFormatError {
         final Class<?> clazz = super.defineClass(name, bytes);
         this.BYTES.put(slash(clazz.getName()) + ".class", bytes);
         return onClassDefined(clazz, null);
@@ -52,7 +51,7 @@ public class GroovyByteClassLoader extends GroovyClassLoader {
 
     @Override
     protected ClassCollector createCollector(CompilationUnit unit, SourceUnit su) {
-        return new BytecodeClassCollector(this.BYTES, new InnerLoader(GroovyByteClassLoader.this), unit, su);
+        return new BytecodeClassCollector(new InnerLoader(GroovyByteClassLoader.this), unit, su);
     }
 
     public Class<?> onClassDefined(final Class<?> clazz, final @Nullable SourceUnit source) {
@@ -60,24 +59,21 @@ public class GroovyByteClassLoader extends GroovyClassLoader {
     }
 
     private final class BytecodeClassCollector extends ClassCollector {
-        private final Map<String, byte[]> BYTES;
-        private final SourceUnit SOURCE;
+        private final SourceUnit source;
 
         public BytecodeClassCollector(
-                final Map<String, byte[]> bytes,
                 final InnerLoader loader,
                 final CompilationUnit unit,
                 final SourceUnit su
         ) {
             super(loader, unit, su);
-            this.SOURCE = su;
-            this.BYTES = bytes;
+            this.source = su;
         }
 
         @Override
         protected Class<?> onClassNode(final ClassWriter classWriter, final ClassNode classNode) {
-            this.BYTES.put(slash(classNode.getName()) + ".class", classWriter.toByteArray());
-            return GroovyByteClassLoader.this.onClassDefined(super.onClassNode(classWriter, classNode), this.SOURCE);
+            GroovyByteClassLoader.this.BYTES.put(slash(classNode.getName()) + ".class", classWriter.toByteArray());
+            return GroovyByteClassLoader.this.onClassDefined(super.onClassNode(classWriter, classNode), this.source);
         }
     }
 }
