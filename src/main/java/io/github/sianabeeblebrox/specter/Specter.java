@@ -58,21 +58,6 @@ public final class Specter {
             return super.onClassDefined(clazz, source);
         }
     };
-
-    private static void addTransformers(final Class<?> clazz) {
-        if(clazz.isAnnotationPresent(Transformer.class)) {
-            LOGGER.log("info", "Adding transformer ", clazz.getName());
-            TRANSFORMER_MANAGER.addTransformer(clazz.getName());
-        }
-        for(final Class<?> child : clazz.getDeclaredClasses()) {
-            addTransformers(child);
-        }
-    }
-
-    public static Path getCacheLocation(final URI uri) {
-        return CACHE.resolve(ROOT.relativize(Path.of(URI.create(uri.toString().replaceAll("^(?:jar:)+|!", "")))));
-    }
-
     private static final TransformerManager TRANSFORMER_MANAGER = new TransformerManager(new BasicClassProvider(CLASS_LOADER));
     private static Instrumentation INSTRUMENTATION;
     public static final EventBus EVENT_BUS = new EventBus();
@@ -129,10 +114,6 @@ public final class Specter {
                             addURL(unchecked(() -> path.toUri().toURL()));
                         }
                         case "groovy", "gvy", "gy", "gsh" -> unchecked(() -> {
-//                        final Class<?> clazz = CLASS_LOADER.parseClass(new GroovyCodeSource(path.toUri()));
-//                        if(Script.class.isAssignableFrom(clazz)) {
-//                            InvokerHelper.newScript((Class<? extends Script>) clazz, new Binding()).run();
-//                        }
                             paths.add(path);
                         });
                     }
@@ -271,6 +252,20 @@ public final class Specter {
     }
     public static void setLogger(final Logger logger) {
         Specter.LOGGER = logger;
+    }
+
+    private static void addTransformers(final Class<?> clazz) {
+        if(clazz.isAnnotationPresent(Transformer.class)) {
+            LOGGER.log("info", "Adding transformer ", clazz.getName());
+            TRANSFORMER_MANAGER.addTransformer(clazz.getName());
+        }
+        for(final Class<?> child : clazz.getDeclaredClasses()) {
+            addTransformers(child);
+        }
+    }
+
+    private static Path getCacheLocation(final URI uri) {
+        return CACHE.resolve(ROOT.relativize(Path.of(URI.create(uri.toString().replaceAll("^(?:jar:)+|!", "")))));
     }
 
     private static void run(@Nullable final Class<?> clazz, final Binding binding) {
