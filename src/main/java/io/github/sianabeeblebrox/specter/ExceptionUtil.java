@@ -92,7 +92,7 @@ public final class ExceptionUtil {
      */
     @FunctionalInterface
     public interface CheckedConsumer<T,E extends Throwable> {
-        T accept(final T t) throws E;
+        void accept(final T t) throws E;
     }
 
     /**
