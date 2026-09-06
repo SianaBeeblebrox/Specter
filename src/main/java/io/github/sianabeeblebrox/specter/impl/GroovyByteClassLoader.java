@@ -10,8 +10,12 @@ import org.codehaus.groovy.control.SourceUnit;
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.net.URI;
+import java.security.CodeSource;
+import java.security.cert.Certificate;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static io.github.sianabeeblebrox.specter.ExceptionUtil.unchecked;
 import static net.lenni0451.classtransform.utils.ASMUtils.slash;
 
 /**
@@ -45,6 +49,12 @@ public class GroovyByteClassLoader extends GroovyClassLoader {
     @Override
     public Class<?> defineClass(String name, byte[] bytes) throws ClassFormatError {
         final Class<?> clazz = super.defineClass(name, bytes);
+        this.BYTES.put(slash(clazz.getName()) + ".class", bytes);
+        return onClassDefined(clazz, null);
+    }
+
+    public Class<?> defineClass(final URI uri, final byte[] bytes) {
+        final Class<?> clazz = super.defineClass(null, bytes, 0, bytes.length, new CodeSource(unchecked(() -> uri.toURL()), (Certificate[]) null));
         this.BYTES.put(slash(clazz.getName()) + ".class", bytes);
         return onClassDefined(clazz, null);
     }
