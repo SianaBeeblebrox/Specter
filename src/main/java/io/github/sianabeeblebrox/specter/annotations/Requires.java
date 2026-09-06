@@ -22,7 +22,7 @@ public @interface Requires {
      *
      * @return The name of the class to check for
      */
-    String value();
+    String name();
 
     /**
      * If {@code true}, then the annotated element is removed iff the given class exists; otherwise, it is remove if the
