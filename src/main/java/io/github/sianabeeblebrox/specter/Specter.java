@@ -37,7 +37,7 @@ import static io.github.sianabeeblebrox.specter.Dynamics.invoke;
 public final class Specter {
     public static final String VERSION = Specter.class.getPackage().getImplementationVersion();
     private static final Map<Class<?>, String[]> ARGS = Collections.synchronizedMap(new LinkedHashMap<>());
-    private static final GroovyClassLoader CLASS_LOADER = new GroovyByteClassLoader(Specter.class.getClassLoader()) {
+    private static final GroovyByteClassLoader CLASS_LOADER = new GroovyByteClassLoader(Specter.class.getClassLoader()) {
         @Override
         public Class<?> onClassDefined(final Class<?> clazz, final @Nullable SourceUnit source) {
             addTransformers(clazz);
@@ -283,7 +283,7 @@ public final class Specter {
                 Reference<Class<?>> script = new Reference<>();
                 with(() -> Files.list(cache), (Stream<Path> indexes) -> indexes.forEach(index -> unchecked(() -> {
                     with(() -> Files.list(index), (Stream<Path> stream) -> stream.forEach(cached -> unchecked(() -> {
-                        final Class<?> clazz = CLASS_LOADER.defineClass(null, Files.readAllBytes(cached));
+                        final Class<?> clazz = CLASS_LOADER.defineClass(path.toUri(), Files.readAllBytes(cached));
 
                         if(clazz.getEnclosingClass() == null) {
                            script.set(clazz);
