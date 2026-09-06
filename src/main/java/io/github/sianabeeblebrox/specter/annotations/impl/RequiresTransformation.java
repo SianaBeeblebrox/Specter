@@ -18,14 +18,14 @@ public final class RequiresTransformation implements ASTTransformation {
     @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         final AnnotationNode annotation = (AnnotationNode) nodes[0];
-        final String value = annotation.getMember("value") instanceof final ConstantExpression expr && expr.getValue() instanceof final String str ? str : null;
+        final String name = annotation.getMember("name") instanceof final ConstantExpression expr && expr.getValue() instanceof final String str ? str : null;
         final boolean inverted = annotation.getMember("inverted") instanceof final ConstantExpression expr && expr.isTrueExpression();
 
-        if(value == null) {
-            source.addFatalError("Expected string class name for 'value'", annotation);
+        if(name == null) {
+            source.addFatalError("Expected string class name for 'name'", annotation);
         }
 
-        if(hasClass(source.getClassLoader(), value) == inverted) {
+        if(hasClass(source.getClassLoader(), name) == inverted) {
             switch(nodes[1]) {
                 case final MethodNode node -> node.getDeclaringClass().removeMethod(node);
                 case final ClassNode node -> {
