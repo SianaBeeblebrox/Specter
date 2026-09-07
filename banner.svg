@@ -35,7 +35,7 @@
      inkscape:window-x="-9"
      inkscape:window-y="-9"
      inkscape:window-maximized="1"
-     inkscape:current-layer="layer3" /><defs
+     inkscape:current-layer="layer1" /><defs
      id="defs1" /><g
      inkscape:groupmode="layer"
      id="layer3"
@@ -71,17 +71,18 @@
      inkscape:groupmode="layer"
      id="layer1"><g
        id="g4"
-       transform="translate(-74.84375,-24.809723)"
+       transform="translate(-74.84375,-29.701793)"
        inkscape:label="Text"><text
          xml:space="preserve"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:80px;font-family:Bahnschrift;-inkscape-font-specification:'Bahnschrift, @wght=600,wdth=75';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;font-variation-settings:'wdth' 75, 'wght' 600;writing-mode:lr-tb;direction:ltr;fill:#000000;stroke-width:2.26772;stroke-linecap:square;stroke-linejoin:bevel;paint-order:stroke fill markers"
-         x="627.13281"
-         y="460.04187"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:90.6189px;font-family:Bahnschrift;-inkscape-font-specification:'Bahnschrift, @wght=600,wdth=75';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;font-variation-settings:'wdth' 75, 'wght' 600;writing-mode:lr-tb;direction:ltr;fill:#000000;stroke-width:2.56873;stroke-linecap:square;stroke-linejoin:bevel;paint-order:stroke fill markers"
+         x="626.64026"
+         y="467.5809"
          id="text2"><tspan
            sodipodi:role="line"
            id="tspan3"
-           x="627.13281"
-           y="460.04187">Mod anything Java!</tspan></text><text
+           x="626.64026"
+           y="467.5809"
+           style="stroke-width:2.56873">Mod anything Java!</tspan></text><text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:192px;font-family:Bahnschrift;-inkscape-font-specification:'Bahnschrift, @wght=700,wdth=87';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;font-variation-settings:'wdth' 87, 'wght' 700;writing-mode:lr-tb;direction:ltr;fill:#000000;stroke-width:2.26772;stroke-linecap:square;stroke-linejoin:bevel;paint-order:stroke fill markers"
          x="624.28125"
