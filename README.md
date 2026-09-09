@@ -1,6 +1,6 @@
 <img src="banner.png" alt="Specter: Mod anything Java!" width="500"/><br>
 [![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/SianaBeeblebrox/Specter)
-![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?style=for-the-badge&logo=discord&logoColor=white)
+[![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/pCPHF287hE)
 ![Modrinth](https://img.shields.io/badge/modrinth-00af5c?style=for-the-badge&logo=modrinth&logoColor=white)
 ![GitHub last commit](https://img.shields.io/github/last-commit/SianaBeeblebrox/Specter?style=for-the-badge)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/SianaBeeblebrox/Specter?style=for-the-badge)
