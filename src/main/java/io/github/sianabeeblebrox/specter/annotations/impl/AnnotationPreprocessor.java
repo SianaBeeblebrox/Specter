@@ -41,7 +41,6 @@ public final class AnnotationPreprocessor implements IAnnotationHandlerPreproces
         registerTranslator(Shadow.class, CShadow.class);
         registerTranslator(Shared.class, CShared.class);
         registerTranslator(Slice.class, CSlice.class);
-        registerTranslator(Stub.class, CStub.class);
         registerTranslator(Stub.class, CStub.class, Map.of("access", CStub.Access.class));
         registerTranslator(Target.class, CTarget.class, Map.of("shift", CTarget.Shift.class));
         registerTranslator(Transformer.class, CTransformer.class);
