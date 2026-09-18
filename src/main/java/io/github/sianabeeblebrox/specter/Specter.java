@@ -156,10 +156,7 @@ public final class Specter {
         }
     }
 
-
-
     // TODO download zips, use versioned crc32 for cache
-
     private static String crc32(final byte[] bytes) {
         final var crc32 = new CRC32();
         crc32.update(Specter.VERSION.toString().getBytes(StandardCharsets.UTF_8));
