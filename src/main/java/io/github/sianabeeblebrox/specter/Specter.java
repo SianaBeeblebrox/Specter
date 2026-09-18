@@ -106,6 +106,7 @@ public final class Specter {
 
             List<Path> paths = new ArrayList<>();
 
+            // TODO sort and match wiki
             ls(ROOT, path -> {
                 if(Files.isRegularFile(path)) {
                     switch(getExtension(path)) {
@@ -133,7 +134,9 @@ public final class Specter {
     }
     private static void ls(final Path root, final Consumer<Path> callback, final boolean unzip) {
         try(final var stream = Files.list(root)) {
-            stream.forEach(path -> {
+            stream.sorted(
+                Comparator.comparing(path -> path.getFileName().toString())
+            ).forEach(path -> {
                 callback.accept(path);
                 if(Files.isDirectory(path)) {
                     ls(path, callback, false);
