@@ -5,6 +5,7 @@ import io.github.sianabeeblebrox.specter.annotations.Transformer;
 import io.github.sianabeeblebrox.specter.annotations.impl.AnnotationPreprocessor;
 import io.github.sianabeeblebrox.specter.annotations.impl.StaticTransformation;
 import io.github.sianabeeblebrox.specter.impl.AbstractClassNodeTransform;
+import io.github.sianabeeblebrox.specter.impl.FileUtils;
 import io.github.sianabeeblebrox.specter.impl.GroovyByteClassLoader;
 import io.github.sianabeeblebrox.specter.logger.Logger;
 import net.lenni0451.classtransform.TransformerManager;
@@ -21,14 +22,17 @@ import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.security.ProtectionDomain;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.zip.CRC32;
 
 import static io.github.sianabeeblebrox.specter.ExceptionUtil.*;
 import static io.github.sianabeeblebrox.specter.Dynamics.get;
@@ -51,7 +55,7 @@ public final class Specter {
 
                     Files.copy(this.getResourceAsStream(clazz.getName().replace('.', '/') + ".class"), index.resolve(clazz.getName() + ".class"));
                 } catch (final Throwable e) {
-                    deleteIfExists(cache);
+                    FileUtils.rmrf(cache);
                     LOGGER.log("error", "Unable to cache class '", clazz.getName(), "': ", e);
                 }
             }
@@ -102,47 +106,46 @@ public final class Specter {
 
         if(ROOT != null) {
             LOGGER.log("info", "Loading mods from '", ROOT, "'");
-            var start = System.nanoTime();
+            final long start = System.nanoTime();
 
-            List<Path> paths = new ArrayList<>();
-
-            // TODO sort and match wiki
+            final List<Path> scripts = new ArrayList<>();
             ls(ROOT, path -> {
                 if(Files.isRegularFile(path)) {
-                    switch(getExtension(path)) {
+                    switch(FileUtils.getExtension(path)) {
                         case "jar" -> {
                             LOGGER.log("info", "Found jar ", path);
                             addURL(unchecked(() -> path.toUri().toURL()));
                         }
                         case "groovy", "gvy", "gy", "gsh" -> unchecked(() -> {
-                            paths.add(path);
+                            scripts.add(path);
                         });
                     }
                 }
-            }, true);
+            }, true, path -> !FileUtils.getFileName(path).startsWith(".") && !"disabled".equals(FileUtils.getExtension(path)));
 
-            for(final Path path : paths) {
+            for(final Path path : scripts) {
                 run(load(path, true), new Binding());
             }
 
-            var end = System.nanoTime();
+            final long end = System.nanoTime();
             Specter.LOGGER.log("info", "Loaded in ", (end - start)/1e6d, "ms");
         }
 
         TRANSFORMER_MANAGER.hookInstrumentation(instrumentation);
         Specter.EVENT_BUS.dispatch("premain", instrumentation);
     }
-    private static void ls(final Path root, final Consumer<Path> callback, final boolean unzip) {
-        try(final var stream = Files.list(root)) {
-            stream.sorted(
-                Comparator.comparing(path -> path.getFileName().toString())
-            ).forEach(path -> {
+
+    private static void ls(final Path root, final Consumer<Path> callback, final boolean unzip, final Function<Path, Boolean> filter) {
+        try(final var stream = FileUtils.ls(root)) {
+            stream.forEach(path -> {
+                if(!filter.apply(path)) return;
+
                 callback.accept(path);
                 if(Files.isDirectory(path)) {
-                    ls(path, callback, false);
-                } else if(unzip && "zip".equals(getExtension(path))) {
+                    ls(path, callback, false, filter);
+                } else if(unzip && "zip".equals(FileUtils.getExtension(path))) {
                     try(final FileSystem zip = FileSystems.newFileSystem(path)) {
-                        zip.getRootDirectories().forEach(rd -> ls(rd, callback, false));
+                        zip.getRootDirectories().forEach(rd -> ls(rd, callback, false, filter));
                     } catch(final Throwable t) {
                         throwUnchecked(t);
                     }
@@ -153,28 +156,15 @@ public final class Specter {
         }
     }
 
-    private static String getExtension(final Path path) {
-        final String name = path.getFileName().toString();
-        final int i;
-        return (i = name.indexOf('.')) > -1 ? name.substring(i + 1) : "";
-    }
 
-    // TODO download zip
-    private static Path download(final URL url) {
-        return null;
-    }
 
-    private static void deleteIfExists(final Path path) {
-        unchecked(() -> {
-            if(Files.isDirectory(path)) {
-                with(
-                        () -> Files.walk(path),
-                        (Stream<Path> stream) -> stream.sorted(Comparator.reverseOrder()).forEach(p -> unchecked(() -> Files.delete(p)))
-                );
-            } else {
-                Files.deleteIfExists(path);
-            }
-        });
+    // TODO download zips, use versioned crc32 for cache
+
+    private static String crc32(final byte[] bytes) {
+        final var crc32 = new CRC32();
+        crc32.update(Specter.VERSION.toString().getBytes(StandardCharsets.UTF_8));
+        crc32.update(bytes);
+        return String.format("%016x", crc32.getValue());
     }
 
     private static void openModules(final Instrumentation instrumentation) {
@@ -284,8 +274,8 @@ public final class Specter {
             final Path cache = getCacheLocation(path.toUri());
             if(cachable && Files.isDirectory(cache) && Files.getLastModifiedTime(path).compareTo(Files.getLastModifiedTime(cache)) < 0) {
                 Reference<Class<?>> script = new Reference<>();
-                with(() -> Files.list(cache), (Stream<Path> indexes) -> indexes.forEach(index -> unchecked(() -> {
-                    with(() -> Files.list(index), (Stream<Path> stream) -> stream.forEach(cached -> unchecked(() -> {
+                with(() -> FileUtils.ls(cache), (Stream<Path> indexes) -> indexes.forEach(index -> unchecked(() -> {
+                    with(() -> FileUtils.ls(index), (Stream<Path> stream) -> stream.forEach(cached -> unchecked(() -> {
                         final Class<?> clazz = CLASS_LOADER.defineClass(path.toUri(), Files.readAllBytes(cached));
 
                         if(clazz.getEnclosingClass() == null) {
@@ -295,7 +285,7 @@ public final class Specter {
                 })));
                 return script.get();
             } else {
-                deleteIfExists(cache);
+                FileUtils.rmrf(cache);
                 return CLASS_LOADER.parseClass(new GroovyCodeSource(path.toUri()), cachable);
             }
         });
