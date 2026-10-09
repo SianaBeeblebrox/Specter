@@ -49,3 +49,8 @@ shadowJar {
     archiveClassifier = null
     archiveVersion = "${project.version}-${'git rev-parse --verify --short HEAD'.execute().text.trim()}"
 }
+
+task latest(type: Copy) {
+    dependsOn shadowJar
+    from shadowJar.archiveFile into shadowJar.destinationDirectory rename '(.*?)-(.*)\\.([a-z]+)', '$1-latest.$3'
+}
