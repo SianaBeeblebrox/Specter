@@ -35,11 +35,11 @@ import static io.github.sianabeeblebrox.specter.config.impl.Expressions.*;
  * <h1>Config Format</h1>
  * Configuration files should contain a single Groovy expression with an optional doc-comment. {@link Map} and
  * {@link List} literals not within a different expression are wrapped in {@link ConfigMap} and {@link ConfigList}
- * respectively. These wrappers will preserve the AST structure of their values unless overwritten. Doc-comments attached
- * to these lists, maps, and map entries are also preserved and can be programmatically manipulated via
+ * respectively. These wrappers preserve the AST structure of their values unless overwritten. Doc-comments attached to
+ * these lists, maps, and map entries are also preserved and can be programmatically manipulated via
  * {@link WrappedExpression#setComment(String) setComment(String)} and {@link WrappedExpression#getComment() getComment()}.
  * Entries in these lists and maps can be assigned a Groovy {@link Expression} or an arbitrary value. When assigning an
- * expression, it is evaluated to get the new value and the underlying expression is stored for serialization. When
+ * expression, it is evaluated to get the new value, and the underlying expression is stored for serialization. When
  * assigning any other value, an attempt is made to create an expression representing it for serialization. Primitives,
  * boxed primitives, {@link Enum enums}, {@link Record records}, {@link String strings}, {@link GString gstrings},
  * numeric {@link Range ranges}, {@link Tuple tuples}, {@link Map maps}, and {@link List lists} are fully supported.
@@ -67,7 +67,7 @@ import static io.github.sianabeeblebrox.specter.config.impl.Expressions.*;
  * <br>
  * <p><i>Note: File extension is irrelevant for the purposes of this class; however, don't use one that Specter will load
  * automatically if placing configuration files within the mods folder! Try creating a file association in your editor
- * if you want syntax highlighting. </i></p>
+ * if you want syntax highlighting.</i></p>
  */
 @ParametersAreNonnullByDefault
 public final class Config {
