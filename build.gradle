@@ -19,7 +19,7 @@ repositories {
 dependencies {
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
 
-    implementation 'org.apache.groovy:groovy-all:6.0.0-alpha-2'
+    implementation 'org.apache.groovy:groovy-all:6.0.0-RC-3'
     implementation 'net.lenni0451.classtransform:core:1.15.1'
 
 //    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
