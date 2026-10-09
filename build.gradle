@@ -53,4 +53,8 @@ shadowJar {
 task latest(type: Copy) {
     dependsOn shadowJar
     from shadowJar.archiveFile into shadowJar.destinationDirectory rename '(.*?)-(.*)\\.([a-z]+)', '$1-latest.$3'
+    
+    doLast {
+        println "${shadowJar.archiveVersion.get()} -> latest"
+    }
 }
