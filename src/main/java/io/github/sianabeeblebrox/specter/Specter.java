@@ -22,6 +22,7 @@ import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URL;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.security.ProtectionDomain;
@@ -41,6 +42,8 @@ import static io.github.sianabeeblebrox.specter.Dynamics.invoke;
 public final class Specter {
     public static final String VERSION = Specter.class.getPackage().getImplementationVersion();
     private static final Map<Class<?>, String[]> ARGS = Collections.synchronizedMap(new LinkedHashMap<>());
+    private static final HashMap<URI, String> HASHES = new HashMap<>();
+
     private static final GroovyByteClassLoader CLASS_LOADER = new GroovyByteClassLoader(Specter.class.getClassLoader()) {
         @Override
         public Class<?> onClassDefined(final Class<?> clazz, final @Nullable SourceUnit source) {
@@ -55,7 +58,7 @@ public final class Specter {
 
                     Files.copy(this.getResourceAsStream(clazz.getName().replace('.', '/') + ".class"), index.resolve(clazz.getName() + ".class"));
                 } catch (final Throwable e) {
-                    FileUtils.rmrf(cache);
+                    FileUtils.rmrf(cache.getParent());
                     LOGGER.log("error", "Unable to cache class '", clazz.getName(), "': ", e);
                 }
             }
@@ -156,13 +159,7 @@ public final class Specter {
         }
     }
 
-    // TODO download zips, use versioned crc32 for cache
-    private static String crc32(final byte[] bytes) {
-        final var crc32 = new CRC32();
-        crc32.update(Specter.VERSION.toString().getBytes(StandardCharsets.UTF_8));
-        crc32.update(bytes);
-        return String.format("%016x", crc32.getValue());
-    }
+    // TODO download zips
 
     private static void openModules(final Instrumentation instrumentation) {
         // Automatic modules are exported and opened by default while explicit modules are not,
@@ -255,7 +252,16 @@ public final class Specter {
     }
 
     private static Path getCacheLocation(final URI uri) {
-        return CACHE.resolve(ROOT.relativize(Path.of(URI.create(uri.toString().replaceAll("^(?:jar:)+|!", "")))));
+        return CACHE.resolve(ROOT.relativize(Path.of(URI.create(uri.toString().replaceAll("^(?:jar:)+|!", ""))))).resolve(HASHES.computeIfAbsent(uri, u -> {
+            try(final var channel = FileChannel.open(Path.of(u))) {
+                final var crc32 = new CRC32();
+                crc32.update(Specter.VERSION.toString().getBytes(StandardCharsets.UTF_8));
+                crc32.update(channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size()));
+                return String.format("%08x", crc32.getValue());
+            } catch(final Throwable t) {
+                return throwUnchecked(t);
+            }
+        }));
     }
 
     private static void run(@Nullable final Class<?> clazz, final Binding binding) {
@@ -282,7 +288,7 @@ public final class Specter {
                 })));
                 return script.get();
             } else {
-                FileUtils.rmrf(cache);
+                FileUtils.rmrf(cache.getParent());
                 return CLASS_LOADER.parseClass(new GroovyCodeSource(path.toUri()), cachable);
             }
         });
