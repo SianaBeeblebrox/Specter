@@ -81,9 +81,9 @@ public class GroovyByteClassLoader extends GroovyClassLoader {
         }
 
         @Override
-        protected Class<?> onClassNode(final ClassWriter classWriter, final ClassNode classNode) {
-            GroovyByteClassLoader.this.BYTES.put(slash(classNode.getName()) + ".class", classWriter.toByteArray());
-            return GroovyByteClassLoader.this.onClassDefined(super.onClassNode(classWriter, classNode), this.source);
+        protected Class<?> createClass(final byte[] code, final ClassNode classNode) {
+            GroovyByteClassLoader.this.BYTES.put(slash(classNode.getName()) + ".class", code);
+            return GroovyByteClassLoader.this.onClassDefined(super.createClass(code, classNode), this.source);
         }
     }
 }
