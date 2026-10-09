@@ -13,6 +13,9 @@ import java.util.regex.Pattern;
 
 import static io.github.sianabeeblebrox.specter.ExceptionUtil.*;
 
+/**
+ * A way to change the access flags of classes and their members without needing {@link io.github.sianabeeblebrox.specter.annotations.Transformer Class Transformers}. See {@link AccessTweaker#access(String)} for usage.
+ */
 @ParametersAreNonnullByDefault
 public final class AccessTweaker extends AbstractClassVisitorTransform {
     private static final Pattern AT_PATTERN = Pattern.compile("(?U)^(?<modifiers>(?:[+-][a-zA-Z]+\\s+)*)(?<class>\\p{javaJavaIdentifierStart}[\\p{javaJavaIdentifierPart}./]*)(?:\\s+(?<member>\\p{javaUnicodeIdentifierStart}\\p{javaJavaIdentifierPart}*|\\*)(?:(?:\\s+|(?=\\())(?<descriptor>.*))?)?$");

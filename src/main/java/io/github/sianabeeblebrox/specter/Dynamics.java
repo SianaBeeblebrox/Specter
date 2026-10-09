@@ -92,6 +92,21 @@ public final class Dynamics {
     }
 
     /**
+     * Gets an instance field from a particular class in the inheritance hierarchy bypassing access checks
+     * @param instance the instance
+     * @param owner the owning class
+     * @param field the field name
+     * @return the field value
+     * @param <T>
+     */
+    public static <T> T get(final Object instance, final Class<?> owner, final String field) {
+        if(field.equals("length") && owner.isArray()) {
+            return (T) (Object) Array.getLength(instance);
+        }
+        return (T) unchecked(() -> setAccessible(owner.getDeclaredField(field)).get(instance));
+    }
+
+    /**
      * Gets array element
      * (e.g., {@code arr[n]} &rarr; {@code get(arr, n)})
      * @param instance the array instance
