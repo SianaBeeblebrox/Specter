@@ -4,9 +4,7 @@ import groovy.lang.*;
 import io.github.sianabeeblebrox.specter.annotations.Transformer;
 import io.github.sianabeeblebrox.specter.annotations.impl.AnnotationPreprocessor;
 import io.github.sianabeeblebrox.specter.annotations.impl.StaticTransformation;
-import io.github.sianabeeblebrox.specter.impl.AbstractClassNodeTransform;
-import io.github.sianabeeblebrox.specter.impl.FileUtils;
-import io.github.sianabeeblebrox.specter.impl.GroovyByteClassLoader;
+import io.github.sianabeeblebrox.specter.impl.*;
 import io.github.sianabeeblebrox.specter.logger.Logger;
 import net.lenni0451.classtransform.TransformerManager;
 import net.lenni0451.classtransform.transformer.HandlerPosition;
@@ -28,7 +26,6 @@ import java.nio.file.*;
 import java.security.ProtectionDomain;
 import java.util.*;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -48,7 +45,7 @@ public final class Specter {
         @Override
         public Class<?> onClassDefined(final Class<?> clazz, final @Nullable SourceUnit source) {
             addTransformers(clazz);
-            if(source != null) {
+            if(Specter.isCacheEnabled() && source != null) {
                 final Path cache = getCacheLocation(source.getSource().getURI());
                 try {
                     Files.createDirectories(cache);
@@ -241,6 +238,10 @@ public final class Specter {
         Specter.LOGGER = logger;
     }
 
+    private static boolean isCacheEnabled() {
+        return Boolean.parseBoolean(System.getProperty("specter.cache", "true"));
+    }
+
     private static void addTransformers(final Class<?> clazz) {
         if(clazz.isAnnotationPresent(Transformer.class)) {
             LOGGER.log("info", "Adding transformer ", clazz.getName());
@@ -275,7 +276,7 @@ public final class Specter {
     private static @Nullable Class<?> load(final Path path, final boolean cachable) {
         return unchecked(() -> {
             final Path cache = getCacheLocation(path.toUri());
-            if(cachable && Files.isDirectory(cache) && Files.getLastModifiedTime(path).compareTo(Files.getLastModifiedTime(cache)) < 0) {
+            if(Specter.isCacheEnabled() && cachable && Files.isDirectory(cache) && Files.getLastModifiedTime(path).compareTo(Files.getLastModifiedTime(cache)) < 0) {
                 Reference<Class<?>> script = new Reference<>();
                 with(() -> FileUtils.ls(cache), (Stream<Path> indexes) -> indexes.forEach(index -> unchecked(() -> {
                     with(() -> FileUtils.ls(index), (Stream<Path> stream) -> stream.forEach(cached -> unchecked(() -> {
