@@ -47,14 +47,4 @@ public abstract class AbstractClassNodeTransform extends AbstractASMTransform {
      *         or {@code null} if no transform is performed
      */
     public abstract @Nullable ClassNode transform(final Module module, @Nullable final ClassLoader loader, final String name, final @Nullable Class<?> clazz, final ProtectionDomain domain, final byte[] bytes, final ClassNode node);
-
-    /**
-     * Returns {@code true} iff all the bits set in {@code flags} are set in {@code bitmask}
-     * @param bitmask the bitmask to check
-     * @param flags the bits to check
-     * @return {@code true} iff all the bits set in {@code flags} are set in {@code bitmask}
-     */
-    protected static boolean checkFlags(final int bitmask, final int flags) {
-        return (bitmask & flags) == flags;
-    }
 }

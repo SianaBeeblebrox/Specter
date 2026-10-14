@@ -33,4 +33,14 @@ public abstract class AbstractASMTransform implements ClassFileTransformer {
     protected boolean shouldAutoComputeMaxs() {
         return false;
     }
+
+    /**
+     * Returns {@code true} iff all the bits set in {@code flags} are set in {@code bitmask}
+     * @param bitmask the bitmask to check
+     * @param flags the bits to check
+     * @return {@code true} iff all the bits set in {@code flags} are set in {@code bitmask}
+     */
+    protected static boolean checkFlags(final int bitmask, final int flags) {
+        return (bitmask & flags) == flags;
+    }
 }
