@@ -48,6 +48,7 @@ shadowJar {
     from 'LICENSE'
     archiveClassifier = null
     archiveVersion = "${project.version}-${'git rev-parse --verify --short HEAD'.execute().text.trim()}"
+    mergeServiceFiles {}
 }
 
 task latest(type: Copy) {
