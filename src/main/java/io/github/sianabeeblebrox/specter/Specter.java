@@ -39,8 +39,6 @@ import static io.github.sianabeeblebrox.specter.Dynamics.invoke;
 public final class Specter {
     public static final String VERSION = Specter.class.getPackage().getImplementationVersion();
     private static final Map<Class<?>, String[]> ARGS = Collections.synchronizedMap(new LinkedHashMap<>());
-    private static final HashMap<URI, String> HASHES = new HashMap<>();
-
     private static final GroovyByteClassLoader CLASS_LOADER = new GroovyByteClassLoader(Specter.class.getClassLoader()) {
         @Override
         public Class<?> onClassDefined(final Class<?> clazz, final @Nullable SourceUnit source) {
@@ -114,7 +112,7 @@ public final class Specter {
                     switch(FileUtils.getExtension(path)) {
                         case "jar" -> {
                             LOGGER.log("info", "Found jar ", path);
-                            addURL(unchecked(() -> path.toUri().toURL()));
+                            addURLToClasspath(unchecked(() -> path.toUri().toURL()));
                         }
                         case "groovy", "gvy", "gy", "gsh" -> unchecked(() -> {
                             scripts.add(path);
@@ -192,11 +190,19 @@ public final class Specter {
     }
 
     /**
-     * Adds a URL to the class path
+     * Adds a URL to the classpath
      * @param url the url to add
      */
-    public static void addURL(final URL url) {
+    public static void addURLToClasspath(final URL url) {
         invoke((Object) get(ClassLoader.getSystemClassLoader(), "ucp"), "addURL", URL.class, url);
+    }
+
+    /**
+     * Returns a list of URLs on the classpath
+     * @return a list of URLs on the classpath
+     */
+    public static List<URL> getClasspathURLs() {
+        return List.of(invoke((Object) get(ClassLoader.getSystemClassLoader(), "ucp"), "getURLs"));
     }
 
     /**
@@ -253,16 +259,23 @@ public final class Specter {
     }
 
     private static Path getCacheLocation(final URI uri) {
-        return CACHE.resolve(ROOT.relativize(Path.of(URI.create(uri.toString().replaceAll("^(?:jar:)+|!", ""))))).resolve(HASHES.computeIfAbsent(uri, u -> {
-            try(final var channel = FileChannel.open(Path.of(u))) {
-                final var crc32 = new CRC32();
-                crc32.update(Specter.VERSION.toString().getBytes(StandardCharsets.UTF_8));
-                crc32.update(channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size()));
-                return String.format("%08x", crc32.getValue());
-            } catch(final Throwable t) {
-                return throwUnchecked(t);
-            }
-        }));
+        final class State {
+            private static final Map<URI, String> HASHES = new HashMap<>();
+        }
+        return CACHE.resolve(ROOT.relativize(Path.of(URI.create(uri.toString().replaceAll("^(?:jar:)+|!", ""))))).resolve(State.HASHES.computeIfAbsent(
+                URI.create(uri.toString().replaceFirst("^jar:(.*?)!/.*$", "$1")), // For zip entries, use hash of entire zip
+                u -> {
+                    System.out.println(u);
+                    try(final var channel = FileChannel.open(Path.of(u))) {
+                        final var crc32 = new CRC32();
+                        crc32.update(Specter.VERSION.toString().getBytes(StandardCharsets.UTF_8));
+                        crc32.update(channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size()));
+                        return String.format("%08x", crc32.getValue());
+                    } catch(final Throwable t) {
+                        return throwUnchecked(t);
+                    }
+                }
+        ));
     }
 
     private static void run(@Nullable final Class<?> clazz, final Binding binding) {
