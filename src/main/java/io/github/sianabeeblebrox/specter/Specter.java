@@ -265,7 +265,6 @@ public final class Specter {
         return CACHE.resolve(ROOT.relativize(Path.of(URI.create(uri.toString().replaceAll("^(?:jar:)+|!", ""))))).resolve(State.HASHES.computeIfAbsent(
                 URI.create(uri.toString().replaceFirst("^jar:(.*?)!/.*$", "$1")), // For zip entries, use hash of entire zip
                 u -> {
-                    System.out.println(u);
                     try(final var channel = FileChannel.open(Path.of(u))) {
                         final var crc32 = new CRC32();
                         crc32.update(Specter.VERSION.toString().getBytes(StandardCharsets.UTF_8));
