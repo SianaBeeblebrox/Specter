@@ -103,6 +103,8 @@ public final class Specter {
         });
 
         if(ROOT != null) {
+            final Path self = Path.of(unchecked(() -> Specter.class.getProtectionDomain().getCodeSource().getLocation().toURI())).normalize();
+
             LOGGER.log("info", "Loading mods from '", ROOT, "'");
             final long start = System.nanoTime();
 
@@ -111,8 +113,10 @@ public final class Specter {
                 if(Files.isRegularFile(path)) {
                     switch(FileUtils.getExtension(path)) {
                         case "jar" -> {
-                            LOGGER.log("info", "Found jar ", path);
-                            addURLToClasspath(unchecked(() -> path.toUri().toURL()));
+                            if(!self.equals(path.normalize())) {
+                                LOGGER.log("info", "Found jar ", path);
+                                addURLToClasspath(unchecked(() -> path.toUri().toURL()));
+                            }
                         }
                         case "groovy", "gvy", "gy", "gsh" -> unchecked(() -> {
                             scripts.add(path);
