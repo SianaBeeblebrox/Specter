@@ -28,6 +28,7 @@ import java.util.*;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.jar.JarInputStream;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.CRC32;
@@ -116,6 +117,12 @@ public final class Specter {
                             if(!self.equals(path.normalize())) {
                                 LOGGER.log("info", "Found jar ", path);
                                 addURLToClasspath(unchecked(() -> path.toUri().toURL()));
+                                with(() -> new JarInputStream(Files.newInputStream(path), true), stream -> {
+                                    final var attributes = stream.getManifest().getMainAttributes();
+                                    final Function<String, Set<Class<?>>> split = str -> str == null ? Set.of() : Arrays.stream(str.replace('/', '.').split("\\s*,\\s*|\\s+")).map(c -> unchecked(() -> Class.forName(c))).collect(Collectors.toSet());
+                                    split.apply(attributes.getValue("Transformer-Classes")).forEach(Specter::addTransformers);
+                                    split.apply(attributes.getValue("Script-Classes")).forEach(c -> unchecked(() -> Dynamics.invoke(c, "run")));
+                                });
                             }
                         }
                         case "groovy", "gvy", "gy", "gsh" -> unchecked(() -> {
