@@ -101,7 +101,9 @@ public final class Specter {
 
         if(args != null && !args.isBlank()) unchecked(() -> {
             final Path path = ROOT = Paths.get(args.strip()).toAbsolutePath().normalize();
-            Files.createDirectories(CACHE = path.resolve(".cache"));
+            if(Boolean.parseBoolean(System.getProperty("specter.cache", "true"))) {
+                Files.createDirectories(CACHE = path.resolve(".cache"));
+            }
         });
 
         if(ROOT != null) {
@@ -257,7 +259,7 @@ public final class Specter {
     }
 
     private static boolean isCacheEnabled() {
-        return Boolean.parseBoolean(System.getProperty("specter.cache", "true"));
+        return Specter.CACHE != null;
     }
 
     private static void addTransformers(final Class<?> clazz) {
@@ -267,11 +269,11 @@ public final class Specter {
         }
     }
 
-    private static Path getCacheLocation(final URI uri) {
+    private static @Nullable Path getCacheLocation(final URI uri) {
         final class State {
             private static final Map<URI, String> HASHES = new HashMap<>();
         }
-        return CACHE.resolve(ROOT.relativize(Path.of(URI.create(uri.toString().replaceAll("^(?:jar:)+|!", ""))))).resolve(State.HASHES.computeIfAbsent(
+        return isCacheEnabled() ? CACHE.resolve(ROOT.relativize(Path.of(URI.create(uri.toString().replaceAll("^(?:jar:)+|!", ""))))).resolve(State.HASHES.computeIfAbsent(
                 URI.create(uri.toString().replaceFirst("^jar:(.*?)!/.*$", "$1")), // For zip entries, use hash of entire zip
                 u -> {
                     try(final var channel = FileChannel.open(Path.of(u))) {
@@ -283,7 +285,7 @@ public final class Specter {
                         return throwUnchecked(t);
                     }
                 }
-        ));
+        )) : null;
     }
 
     private static void run(@Nullable final Class<?> clazz, final Binding binding) {
@@ -311,7 +313,7 @@ public final class Specter {
                 })));
                 return script.get();
             } else {
-                FileUtils.rmrf(cache.getParent());
+                if(cache != null) FileUtils.rmrf(cache.getParent());
                 return CLASS_LOADER.parseClass(new GroovyCodeSource(path.toUri()), cachable);
             }
         });
