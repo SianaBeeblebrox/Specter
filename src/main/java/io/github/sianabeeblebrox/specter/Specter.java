@@ -11,6 +11,7 @@ import net.lenni0451.classtransform.transformer.HandlerPosition;
 import net.lenni0451.classtransform.utils.tree.BasicClassProvider;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
@@ -264,9 +265,6 @@ public final class Specter {
             LOGGER.log("info", "Adding transformer ", clazz.getName());
             TRANSFORMER_MANAGER.addTransformer(clazz.getName());
         }
-        for(final Class<?> child : clazz.getDeclaredClasses()) {
-            addTransformers(child);
-        }
     }
 
     private static Path getCacheLocation(final URI uri) {
@@ -290,7 +288,7 @@ public final class Specter {
 
     private static void run(@Nullable final Class<?> clazz, final Binding binding) {
         unchecked(() -> {
-            if(Script.class.isAssignableFrom(clazz)) {
+            if(clazz != null && Script.class.isAssignableFrom(clazz)) {
                 InvokerHelper.newScript((Class<? extends Script>) clazz, binding).run();
             }
         });
@@ -303,9 +301,10 @@ public final class Specter {
                 Reference<Class<?>> script = new Reference<>();
                 with(() -> FileUtils.ls(cache), (Stream<Path> indexes) -> indexes.forEach(index -> unchecked(() -> {
                     with(() -> FileUtils.ls(index), (Stream<Path> stream) -> stream.forEach(cached -> unchecked(() -> {
-                        final Class<?> clazz = CLASS_LOADER.defineClass(path.toUri(), Files.readAllBytes(cached));
+                        final byte[] bytes = Files.readAllBytes(cached);
+                        final Class<?> clazz = CLASS_LOADER.defineClass(path.toUri(), bytes);
 
-                        if(clazz.getEnclosingClass() == null) {
+                        if(!Specter.hasEnclosingClass(bytes)) {
                            script.set(clazz);
                         }
                     })));
@@ -316,6 +315,12 @@ public final class Specter {
                 return CLASS_LOADER.parseClass(new GroovyCodeSource(path.toUri()), cachable);
             }
         });
+    }
+
+    private static boolean hasEnclosingClass(final byte[] bytes) {
+        final ClassNode clazz = new ClassNode();
+        new ClassReader(bytes).accept(clazz, 0);
+        return clazz.outerClass != null || clazz.innerClasses.stream().anyMatch(inner -> inner.name.equals(clazz.name) && inner.outerName != null);
     }
 
     public static Path getRootModPath() {
