@@ -57,7 +57,7 @@ Specter.EVENT_BUS.on('main') { Class<?> clazz, String[] args ->
         configuration(default: 'false', name: clazz.name, type: 'Application') {
             option(name: 'JAR_PATH', value: new File(clazz.protectionDomain.codeSource.location.toURI()).path)
             option(name: 'MAIN_CLASS_NAME', value: clazz.name)
-            option(name: 'VM_PARAMETERS', value: ManagementFactory.runtimeMXBean.inputArguments.join(' '))
+            option(name: 'VM_PARAMETERS', value: ManagementFactory.runtimeMXBean.inputArguments.collect({it.replaceAll(/"/, '\\"').replaceAll(/^-D(.*?)=(.*\s.*)$/, '-D$1="$2"')}).join(' '))
             option(name: 'PROGRAM_PARAMETERS', value: args.toList().join(' '))
             option(name: 'WORKING_DIRECTORY', value: System.getProperty('user.dir'))
             option(name: 'ALTERNATIVE_JRE_PATH_ENABLED', value: 'true')
@@ -106,5 +106,3 @@ Specter.EVENT_BUS.on('premain') {
         Files.writeString(p, ['.cache', '.idea', new File(this.class.protectionDomain.codeSource.location.toURI()).name].join('\n'))
     }
 }
-
-
