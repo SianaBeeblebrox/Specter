@@ -122,7 +122,7 @@ public final class Specter {
                                 addURLToClasspath(unchecked(() -> path.toUri().toURL()));
                                 with(() -> new JarInputStream(Files.newInputStream(path), true), stream -> {
                                     final var attributes = stream.getManifest().getMainAttributes();
-                                    final Function<String, Set<Class<?>>> split = str -> str == null ? Set.of() : Arrays.stream(str.replace('/', '.').split("\\s*,\\s*|\\s+")).map(c -> unchecked(() -> Class.forName(c))).collect(Collectors.toSet());
+                                    final Function<String, Set<Class<?>>> split = str -> str == null ? Set.of() : Arrays.stream(str.replace('/', '.').split("\\s*,\\s*|\\s+")).map(c -> unchecked(() -> Class.forName(c))).collect(Collectors.toCollection(LinkedHashSet::new));
                                     split.apply(attributes.getValue("Transformer-Classes")).forEach(Specter::addTransformers);
                                     split.apply(attributes.getValue("Script-Classes")).forEach(c -> unchecked(() -> Dynamics.invoke(c, "run")));
                                 });
