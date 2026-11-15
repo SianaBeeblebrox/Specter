@@ -50,7 +50,7 @@ public final class FileUtils {
                 with(
                     () -> Files.walk(from),
                     (final Stream<Path> paths) -> paths.forEach(s -> unchecked(() -> {
-                        final Path d = to.resolve(from.relativize(s));
+                        final Path d = to.resolve(from.relativize(s).toString()); // toString() needed to fix possible provider mismatch
                         if(Files.isDirectory(s)) {
                             Files.createDirectories(d);
                         } else {
