@@ -176,7 +176,7 @@ public class Resources {
     }
 
     /**
-     * Copies from one given resource to another
+     * Recursively copies from one given resource to another
      * @param origin class to target (within a JAR or ZIP)
      * @param from relative path to resource to copy from
      * @param to relative path to resource to copy to
@@ -186,14 +186,14 @@ public class Resources {
     }
 
     /**
-     * Copies from one given resource to another
+     * Recursively copies from one given resource to another
      * @param origin optional class to target (within a JAR, ZIP, or directory) to copy from
      * @param from relative path to resource to copy from
      * @param target class to target (within a JAR or ZIP) to copy to
      * @param to relative path to resource to copy to
      */
     public static void copy(final @Nullable Class<?> origin, final String from, final Class<?> target, final String to) {
-        unchecked(() -> Files.copy(resolve(origin, from), resolveWritable(target, to), StandardCopyOption.REPLACE_EXISTING));
+        unchecked(() -> FileUtils.copy(resolve(origin, from), resolveWritable(target, to), StandardCopyOption.REPLACE_EXISTING));
     }
 
     /**
