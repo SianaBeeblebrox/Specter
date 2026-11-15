@@ -3,6 +3,7 @@ package io.github.sianabeeblebrox.specter;
 import groovy.json.JsonOutput;
 import groovy.json.JsonSlurper;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -38,6 +39,15 @@ public class Resources {
 
     private static Path getPath(final Class<?> origin, final String path) {
         return getPath(origin).resolve("/").resolve(path);
+    }
+
+    private static Path resolve(final @Nullable Class<?> clazz, final String path) {
+        if(clazz == null) return Paths.get(path);
+        final URI uri = unchecked(clazz.getProtectionDomain().getCodeSource().getLocation()::toURI);
+        return Objects.requireNonNull(ncls(ignored(() -> Paths.get(uri)), () -> unchecked(() -> {
+            FileSystems.newFileSystem(uri, Collections.emptyMap());
+            return Paths.get(uri);
+        }))).resolve(path);
     }
 
     /**
