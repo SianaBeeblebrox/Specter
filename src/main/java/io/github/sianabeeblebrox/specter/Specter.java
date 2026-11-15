@@ -12,6 +12,7 @@ import net.lenni0451.classtransform.utils.tree.BasicClassProvider;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
@@ -24,7 +25,10 @@ import java.net.URL;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.security.CodeSource;
+import java.security.Principal;
 import java.security.ProtectionDomain;
+import java.security.cert.Certificate;
 import java.util.*;
 import java.util.List;
 import java.util.function.Consumer;
@@ -95,6 +99,18 @@ public final class Specter {
                 return null;
             }
         }, true);
+
+        CLASS_LOADER.addTransformer(new AbstractClassNodeTransform() {
+            @Override
+            public @Nullable ClassNode transform(final Module module, final @Nullable ClassLoader loader, final String name, final @Nullable Class<?> clazz, final ProtectionDomain domain, final byte[] bytes, final ClassNode node) {
+                if(node.visibleAnnotations.stream().anyMatch(annotation -> Objects.equals(annotation.desc, Type.getDescriptor(Transformer.class)))) {
+                    node.fields.removeIf(field -> false);
+                    TRANSFORMER_MANAGER.addTransformer(node, true, true);
+//                    return new byte[0]; todo how to return discard????
+                }
+                return null;
+            }
+        });
 
         TRANSFORMER_MANAGER.addTransformerPreprocessor(new AnnotationPreprocessor());
         TRANSFORMER_MANAGER.addCustomAnnotationHandler(new StaticTransformation(), HandlerPosition.PRE);
@@ -328,4 +344,36 @@ public final class Specter {
     public static Path getRootModPath() {
         return ROOT;
     }
+
+    /** /
+    private static @Nullable byte[] onClass(final byte[] bytes) {
+        final ClassReader reader = new ClassReader(bytes);
+        final ClassWriter writer = new ClassWriter(reader, 0);
+        final ClassNode node = new ClassNode();
+        reader.accept(node, 0);
+
+
+        new GroovyByteClassLoader() {
+            byte[] onBytes(final URI uri, final byte[] bytes) {
+                final CodeSource cs = new CodeSource(unchecked(uri::toURL), (Certificate[]) null);
+                new AccessTweaker().transform(this.getUnnamedModule(), this, new ClassReader(bytes).getClassName(), null, new ProtectionDomain(cs, this.getPermissions(cs), CLASS_LOADER, new Principal[] {}), bytes);
+            }
+        };
+
+
+
+        if(node.visibleAnnotations.stream().anyMatch(n -> Objects.equals(n.desc, Type.getType(Transformer.class).getDescriptor()))) {
+            node.fields.removeIf(field -> {
+//                field.name;
+//                field.access
+                return false;
+            });
+            TRANSFORMER_MANAGER.addTransformer(node);
+            return null;
+        } else {
+            node.accept(writer);
+            return writer.toByteArray();
+        }
+    }
+    /**/
 }
