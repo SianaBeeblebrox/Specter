@@ -2,6 +2,7 @@ package io.github.sianabeeblebrox.specter;
 
 import groovy.json.JsonOutput;
 import groovy.json.JsonSlurper;
+import io.github.sianabeeblebrox.specter.impl.FileUtils;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -16,6 +17,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static io.github.sianabeeblebrox.specter.ExceptionUtil.*;
@@ -26,73 +28,64 @@ import static io.github.sianabeeblebrox.specter.ExceptionUtil.*;
  */
 @ParametersAreNonnullByDefault
 public class Resources {
-    private static Path getPath(final URI uri) {
-        return Objects.requireNonNull(ncls(ignored(() -> Paths.get(uri)), () -> unchecked(() -> {
-            FileSystems.newFileSystem(uri, Collections.emptyMap());
-            return Paths.get(uri);
-        })));
-    }
-
-    private static Path getPath(final Class<?> origin) {
-        return unchecked(() -> getPath(origin.getResource("/" + origin.getName().replace('.', '/') + ".class").toURI()));
-    }
-
-    private static Path getPath(final Class<?> origin, final String path) {
-        return getPath(origin).resolve("/").resolve(path);
-    }
-
     private static Path resolve(final @Nullable Class<?> clazz, final String path) {
         if(clazz == null) return Paths.get(path);
         final URI uri = unchecked(clazz.getProtectionDomain().getCodeSource().getLocation()::toURI);
         return Objects.requireNonNull(ncls(ignored(() -> Paths.get(uri)), () -> unchecked(() -> {
             FileSystems.newFileSystem(uri, Collections.emptyMap());
             return Paths.get(uri);
-        }))).resolve(path);
+        }))).resolve(path).normalize();
+    }
+
+    private static Path resolveWritable(final @Nullable Class<?> clazz, final String path) {
+        return unchecked(() -> {
+            final Path p = resolve(clazz, path);
+            if(p.getParent() != null) {
+                Files.createDirectories(p.getParent());
+            }
+            return p;
+        });
     }
 
     /**
      * Overwrites the given resource (equivalent to {@code write(origin, path, bytes, false)})
-     * @param origin any class within the target JAR
-     * @param path absolute path to resource within JAR
+     * @param origin optional class to target (within a JAR, ZIP, or directory)
+     * @param path relative path to resource
      * @param bytes new bytes to write
      */
-    public static void write(final Class<?> origin, final String path, final byte[] bytes) {
+    public static void write(final @Nullable Class<?> origin, final String path, final byte[] bytes) {
         write(origin, path, bytes, false);
     }
 
     /**
      * Overwrites the given resource (equivalent to {@code write(origin, path, text, false)})
-     * @param origin any class within the target JAR
-     * @param path absolute path to resource within JAR
+     * @param origin optional class to target (within a JAR, ZIP, or directory)
+     * @param path relative path to resource
      * @param text new text to write
      */
-    public static void write(final Class<?> origin, final String path, final String text) {
+    public static void write(final @Nullable Class<?> origin, final String path, final String text) {
         write(origin, path, text, false);
     }
 
     /**
      * Writes to the given resource
-     * @param origin any class within the target JAR
-     * @param path absolute path to resource within JAR
+     * @param origin optional class to target (within a JAR, ZIP, or directory)
+     * @param path relative path to resource
      * @param bytes new bytes to write
      * @param append iff true, the new bytes will be appended to the existing resource; otherwise, they will overwrite it
      */
-    public static void write(final Class<?> origin, final String path, final byte[] bytes, final boolean append) {
-        unchecked(() -> {
-            final Path p = getPath(origin, path);
-            Files.createDirectories(p.getParent());
-            Files.write(p, bytes, append ? new OpenOption[] {StandardOpenOption.APPEND} : new OpenOption[] {});
-        });
+    public static void write(final @Nullable Class<?> origin, final String path, final byte[] bytes, final boolean append) {
+        unchecked(() -> Files.write(resolveWritable(origin, path), bytes, append ? new OpenOption[] {StandardOpenOption.APPEND} : new OpenOption[] {}));
     }
 
     /**
      * Writes to the given resource
-     * @param origin any class within the target JAR
-     * @param path absolute path to resource within JAR
+     * @param origin optional class to target (within a JAR, ZIP, or directory)
+     * @param path relative path to resource
      * @param text new text to write
      * @param append iff true, the new text will be appended to the existing resource; otherwise, it will overwrite it
      */
-    public static void write(final Class<?> origin, final String path, final String text, final boolean append) {
+    public static void write(final @Nullable Class<?> origin, final String path, final String text, final boolean append) {
         write(origin, path, text.getBytes(StandardCharsets.UTF_8), append);
     }
 
@@ -108,55 +101,94 @@ public class Resources {
 
     /**
      * Reads the given resource as a byte array
-     * @param origin any class within the target JAR
-     * @param path absolute path to resource within JAR
+     * @param origin optional class to target (within a JAR, ZIP, or directory)
+     * @param path relative path to resource
      * @return the bytes comprising the resource
      */
-    public static byte[] read(final Class<?> origin, final String path) {
-        return unchecked(() -> Files.readAllBytes(getPath(origin, path)));
+    public static byte[] read(final @Nullable Class<?> origin, final String path) {
+        return unchecked(() -> Files.readAllBytes(resolve(origin, path)));
     }
 
     /**
      * Reads the given resource as a string
-     * @param origin any class within the target JAR
-     * @param path absolute path to resource within JAR
+     * @param origin optional class to target (within a JAR, ZIP, or directory)
+     * @param path relative path to resource
      * @return the string text of resource
      */
-    public static String readString(final Class<?> origin, final String path) {
-        return unchecked(() -> Files.readString(getPath(origin, path)));
+    public static String readString(final @Nullable Class<?> origin, final String path) {
+        return unchecked(() -> Files.readString(resolve(origin, path)));
     }
 
     /**
-     * Deletes the given resource
-     * @param origin any class within the target JAR
-     * @param path absolute path to resource within JAR
+     * Recursively deletes the given resource if it exists
+     * @param origin optional class to target (within a JAR, ZIP, or directory)
+     * @param path relative path to resource
      */
-    public static void delete(final Class<?> origin, final String path) {
-        unchecked(() -> Files.delete(getPath(origin, path)));
+    public static void delete(final @Nullable Class<?> origin, final String path) {
+        FileUtils.rmrf(resolve(origin, path));
     }
 
     /**
      * Transforms the given resource using a {@link ResourceTransformer}
-     * @param origin any class within the target JAR
-     * @param path absolute path to resource within JAR
+     * @param origin optional class to target (within a JAR, ZIP, or directory)
+     * @param path relative path to resource
      * @param transformer the function to transform the resource
      */
-    public static void transform(final Class<?> origin, final String path, final ResourceTransformer transformer) {
-        unchecked(() -> {
-            final Path p = getPath(origin, path);
-            Files.write(p, transformer.transform(Files.readAllBytes(p)));
-        });
+    public static void transform(final @Nullable Class<?> origin, final String path, final ResourceTransformer transformer) {
+        copy(origin, path, origin, path, transformer);
     }
 
     /**
      * Copies from one given resource to another and applies a {@link ResourceTransformer} to the copied data
-     * @param origin any class within the target JAR
-     * @param from absolute path to resource within JAR to copy from
-     * @param to absolute path to resource within JAR to copy to
+     * @param origin optional class to target (within a JAR, ZIP, or directory)
+     * @param from relative path to resource to copy from
+     * @param to relative path to resource to copy to
      * @param transformer the function to transform the copied resource
      */
-    public static void copy(final Class<?> origin, final String from, final String to, final ResourceTransformer transformer) {
-        unchecked(() -> Files.write(getPath(origin, to), transformer.transform(Files.readAllBytes(getPath(origin, from)))));
+    public static void copy(final @Nullable Class<?> origin, final String from, final String to, final ResourceTransformer transformer) {
+        copy(origin, from, origin, to, transformer);
+    }
+
+    /**
+     * Copies from one given resource to another and applies a {@link ResourceTransformer} to the copied data
+     * @param origin optional class to target (within a JAR, ZIP, or directory) to copy from
+     * @param from relative path to resource to copy from
+     * @param target optional class to target (within a JAR, ZIP, or directory) to copy to
+     * @param to relative path to resource to copy to
+     * @param transformer the function to transform the copied resource
+     */
+    public static void copy(final @Nullable Class<?> origin, final String from, final @Nullable Class<?> target, final String to, final ResourceTransformer transformer) {
+        unchecked(() -> Files.write(resolveWritable(target, to), transformer.transform(Files.readAllBytes(resolve(origin, from)))));
+    }
+
+    /**
+     * Copies from one given resource to another
+     * @param origin optional class to target (within a JAR, ZIP, or directory)
+     * @param from relative path to resource to copy from
+     * @param to relative path to resource to copy to
+     */
+    public static void copy(final @Nullable Class<?> origin, final String from, final String to) {
+        copy(origin, from, origin, to);
+    }
+
+    /**
+     * Copies from one given resource to another
+     * @param origin optional class to target (within a JAR, ZIP, or directory) to copy from
+     * @param from relative path to resource to copy from
+     * @param target optional class to target (within a JAR, ZIP, or directory) to copy to
+     * @param to relative path to resource to copy to
+     */
+    public static void copy(final @Nullable Class<?> origin, final String from, final @Nullable Class<?> target, final String to) {
+        unchecked(() -> Files.copy(resolve(origin, from), resolveWritable(target, to)));
+    }
+
+    /**
+     * Returns a list of entries within a directory
+     * @param origin optional class to target (within a JAR, ZIP, or directory)
+     * @param path relative path to directory
+     */
+    public static List<String> ls(final @Nullable Class<?> origin, final String path) {
+        return with(() -> Files.list(resolve(origin, path)), (final Stream<Path> paths) -> paths.map(Path::toString).toList());
     }
 
     /**
@@ -165,14 +197,6 @@ public class Resources {
     @FunctionalInterface
     public interface ResourceTransformer {
         byte[] transform(final byte[] bytes);
-
-        /**
-         * Creates a no-op {@link ResourceTransformer} that returns the input unchanged
-         * @return the {@link ResourceTransformer}
-         */
-        static ResourceTransformer noop() {
-            return bytes -> bytes;
-        }
 
         /**
          * Creates a {@link ResourceTransformer} that applies regex substitution to all matches in a textual resource
