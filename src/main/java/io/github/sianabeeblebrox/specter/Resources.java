@@ -30,11 +30,14 @@ import static io.github.sianabeeblebrox.specter.ExceptionUtil.*;
 public class Resources {
     private static Path resolve(final @Nullable Class<?> clazz, final String path) {
         if(clazz == null) return Paths.get(path);
-        final URI uri = unchecked(clazz.getProtectionDomain().getCodeSource().getLocation()::toURI);
+        final URI uri = ncls(
+                ignored(() -> clazz.getResource(String.format("/%s.class", clazz.getName().replace('.', '/'))).toURI()),
+                unchecked(clazz.getProtectionDomain().getCodeSource().getLocation()::toURI)
+        );
         return Objects.requireNonNull(ncls(ignored(() -> Paths.get(uri)), () -> unchecked(() -> {
             FileSystems.newFileSystem(uri, Collections.emptyMap());
             return Paths.get(uri);
-        }))).resolve(path).normalize();
+        }))).getParent().resolve(path).normalize();
     }
 
     private static Path resolveWritable(final @Nullable Class<?> clazz, final String path) {
@@ -179,7 +182,7 @@ public class Resources {
      * @param to relative path to resource to copy to
      */
     public static void copy(final @Nullable Class<?> origin, final String from, final @Nullable Class<?> target, final String to) {
-        unchecked(() -> Files.copy(resolve(origin, from), resolveWritable(target, to)));
+        unchecked(() -> Files.copy(resolve(origin, from), resolveWritable(target, to), StandardCopyOption.REPLACE_EXISTING));
     }
 
     /**
