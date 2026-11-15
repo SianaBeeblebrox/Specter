@@ -27,13 +27,14 @@ import static io.github.sianabeeblebrox.specter.ExceptionUtil.*;
  * <p><i>Note: May not work with all target programs</i></p>
  */
 @ParametersAreNonnullByDefault
+@SuppressWarnings("unused")
 public class Resources {
     private static Path resolve(final @Nullable Class<?> clazz, final String path) {
         if(clazz == null) return Paths.get(path);
-        final URI uri = ncls(
+        final URI uri = nonnull(ncls(
                 ignored(() -> clazz.getResource(String.format("/%s.class", clazz.getName().replace('.', '/'))).toURI()),
                 unchecked(clazz.getProtectionDomain().getCodeSource().getLocation()::toURI)
-        );
+        ));
         return Objects.requireNonNull(ncls(ignored(() -> Paths.get(uri)), () -> unchecked(() -> {
             FileSystems.newFileSystem(uri, Collections.emptyMap());
             return Paths.get(uri);
@@ -97,7 +98,7 @@ public class Resources {
      * @param text new text to write
      * @param append iff true, the new text will be appended to the existing resource; otherwise, it will overwrite it
      */
-    public static void write(final @Nullable Class<?> origin, final String path, final String text, final boolean append) {
+    public static void write(final Class<?> origin, final String path, final String text, final boolean append) {
         write(origin, path, text.getBytes(StandardCharsets.UTF_8), append);
     }
 
