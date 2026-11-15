@@ -10,6 +10,8 @@ import java.security.ProtectionDomain;
 
 @ParametersAreNonnullByDefault
 public abstract class AbstractASMTransform implements ClassFileTransformer {
+    protected boolean autoComputeFrames = false, autoComputeMaxs = false;
+
     /**
      * @deprecated Use overload {@link AbstractASMTransform#transform(Module, ClassLoader, String, Class, ProtectionDomain, byte[])} instead
      */
@@ -23,15 +25,7 @@ public abstract class AbstractASMTransform implements ClassFileTransformer {
     public abstract @Nullable byte[] transform(final Module module, final @Nullable ClassLoader loader, final String name, final @Nullable Class<?> clazz, final ProtectionDomain domain, final byte[] bytes) throws IllegalClassFormatException;
 
     protected final int getClassWriterFlags() {
-        return  (this.shouldAutoComputeMaxs() ? ClassWriter.COMPUTE_MAXS : 0) | (this.shouldAutoComputeFrames() ? ClassWriter.COMPUTE_FRAMES : 0);
-    }
-
-    protected boolean shouldAutoComputeFrames() {
-        return false;
-    }
-
-    protected boolean shouldAutoComputeMaxs() {
-        return false;
+        return  (this.autoComputeMaxs ? ClassWriter.COMPUTE_MAXS : 0) | (this.autoComputeFrames ? ClassWriter.COMPUTE_FRAMES : 0);
     }
 
     /**
