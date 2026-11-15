@@ -97,6 +97,7 @@ public final class Specter {
         }, true);
 
         TRANSFORMER_MANAGER.addTransformerPreprocessor(new AnnotationPreprocessor());
+        TRANSFORMER_MANAGER.addCustomAnnotationHandler(new DuplicateMemberHandler(), HandlerPosition.PRE);
         TRANSFORMER_MANAGER.addCustomAnnotationHandler(new StaticTransformation(), HandlerPosition.PRE);
 
         if(args != null && !args.isBlank()) unchecked(() -> {
